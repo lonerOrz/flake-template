@@ -11,10 +11,11 @@ rec {
     flake-compat.url = "github:edolstra/flake-compat";
   };
 
-  outputs = inputs @ {flake-parts, ...}:
-    flake-parts.lib.mkFlake {inherit inputs;} {
-      _module.args = {inherit nixConfig;};
-      systems = ["x86_64-linux"];
+  outputs =
+    inputs@{ flake-parts, ... }:
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      _module.args = { inherit nixConfig; };
+      systems = [ "x86_64-linux" ];
       imports = [
         ./treefmt.nix
         # optional: introduce nixpkgs into perSystem
@@ -26,24 +27,26 @@ rec {
       };
 
       # test package
-      perSystem = {
-        self',
-        pkgs,
-        ...
-      }: {
-        packages.hello = pkgs.writeShellScriptBin "hello" "echo Hello, flake!";
-        apps.hello = {
-          type = "app";
-          program = "${self'.packages.hello}/bin/hello";
+      perSystem =
+        {
+          self',
+          pkgs,
+          ...
+        }:
+        {
+          packages.hello = pkgs.writeShellScriptBin "hello" "echo Hello, flake!";
+          apps.hello = {
+            type = "app";
+            program = "${self'.packages.hello}/bin/hello";
+          };
+          packages.default = self'.packages.hello;
+          apps.default = self'.apps.hello;
+          devShells.default = pkgs.callPackage ./devshell.nix { };
         };
-        packages.default = self'.packages.hello;
-        apps.default = self'.apps.hello;
-        devShells.default = pkgs.callPackage ./devshell.nix {};
-      };
     };
 
   nixConfig = {
-    trusted-users = ["@wheel"];
+    trusted-users = [ "@wheel" ];
     extra-experimental-features = [
       "nix-command"
       "flakes"
